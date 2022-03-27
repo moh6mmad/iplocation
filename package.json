@@ -1,0 +1,31 @@
+{
+  "name": "iploc",
+  "version": "1.0.0",
+  "description": "IP locator RestAPI service",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ip",
+    "location",
+    "ip",
+    "location",
+    "api"
+  ],
+  "author": "Mohammad Hadizadeh",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.6",
+    "express": "^4.17.3",
+    "express-handlebars": "^6.0.3",
+    "hbs": "^4.2.0",
+    "http": "^0.0.1-security",
+    "https": "^1.0.0",
+    "ip2location-nodejs": "^9.1.0",
+    "mongodb": "^4.4.1",
+    "pug": "^3.0.2",
+    "twing": "^5.1.1",
+    "url": "^0.11.0"
+  }
+}
