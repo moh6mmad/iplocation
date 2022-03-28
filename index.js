@@ -1,13 +1,15 @@
 const app = require('express')();
 const port = process.env.NODE_PORT || 3000;
 const dns = require('dns');
-
-const { TwingEnvironment, TwingLoaderFilesystem } = require('twing');
-let loader = new TwingLoaderFilesystem('./views');
-let twing = new TwingEnvironment(loader);
-
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { TwingEnvironment, TwingLoaderFilesystem } = require('twing');
+const loader = new TwingLoaderFilesystem('./views');
+const twing = new TwingEnvironment(loader);
+const { limiter } = require('./middlewares/rateLimiter');
 const url = "mongodb+srv://db_user_multiapp:sS7oQwJZJGm7vuvD@cluster0.qlrgy.mongodb.net/iplocations?retryWrites=true&w=majority";
+
+
+app.use('/json', limiter);
 
 getIpData = (ipAddress) => {
     const { IP2Location } = require("ip2location-nodejs");
@@ -65,6 +67,11 @@ app.get('/json/ip/:ip', function (req, res) {
     res.send(getIpData(req.params.ip));
 });
 
+app.get('/json/ip', function (req, res) {
+    var clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
+    res.type('application/json');
+    res.send(getIpData(clientIp));
+});
 
 app.listen(port, () => {
     console.log('Node.js Express server listening on port ' + port);
