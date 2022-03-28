@@ -6,7 +6,7 @@ const { TwingEnvironment, TwingLoaderFilesystem } = require('twing');
 const loader = new TwingLoaderFilesystem('./views');
 const twing = new TwingEnvironment(loader);
 const { limiter } = require('./middlewares/rateLimiter');
-const url = "mongodb+srv://db_user_multiapp:sS7oQwJZJGm7vuvD@cluster0.qlrgy.mongodb.net/iplocations?retryWrites=true&w=majority";
+require('dotenv').config();
 
 
 app.use('/json', limiter);
@@ -14,7 +14,7 @@ app.use('/json', limiter);
 getIpData = (ipAddress) => {
     const { IP2Location } = require("ip2location-nodejs");
     let ip2location = new IP2Location();
-    ip2location.open("./db/IP2LOCATION-LITE-DB11.bin");
+    ip2location.open(process.env.IPLOCATION_DB_PATH);
     result = ip2location.getAll(ipAddress);
     ip2location.close();
 
@@ -37,7 +37,7 @@ app.get('/', function (req, res) {
 
 app.get('/json/live/ip/:ip', function (req, res) {
 
-    MongoClient.connect(url, function (err, db) {
+    MongoClient.connect(process.env.MONGODB_DB_URL, function (err, db) {
         if (err) throw err;
         var dbo = db.db("iplocations");
         dbo.collection("ips").find({ ip: req.params.ip }).toArray(function (err, result) {
