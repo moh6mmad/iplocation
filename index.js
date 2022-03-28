@@ -6,30 +6,47 @@ const { TwingEnvironment, TwingLoaderFilesystem } = require('twing');
 const loader = new TwingLoaderFilesystem('./views');
 const twing = new TwingEnvironment(loader);
 const { limiter } = require('./middlewares/rateLimiter');
+
+const { redisClient } = require('./src/redisClient');
+
 require('dotenv').config();
-
-
 app.use('/json', limiter);
 
-getIpData = (ipAddress) => {
-    const { IP2Location } = require("ip2location-nodejs");
-    let ip2location = new IP2Location();
-    ip2location.open(process.env.IPLOCATION_DB_PATH);
-    result = ip2location.getAll(ipAddress);
-    ip2location.close();
+/**
+ * Return data of given IP
+ * 
+ * @param string ipAddress
+ * 
+ * @return array result
+ */
+async function getIpData(ipAddress) {
 
-    Object.keys(result).map((key) => {
-        if (typeof result[key] === 'string' && result[key].indexOf('This method') !== -1) {
-            delete result[key];
-        }
+    var ip2loc = require('async-ip2location');
+
+    let result = await redisClient.get(`ip_data_${ipAddress}`).then((result) => {
+        return result;
+    });  
+    if (typeof result == 'string' && result !== '') {
+        return JSON.parse(result);
+    }
+
+    promise = ip2loc(process.env.IPLOCATION_DB_PATH)
+    .then((db) => {
+        return db.get_all(ipAddress);
+    })
+    .then(result => {
+        
+        redisClient.set(`ip_data_${ipAddress}`, JSON.stringify(result));
+        return result;
     });
 
+    result = await promise;
     return result;
 };
 
 app.get('/', function (req, res) {
     var clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
-    const output = {data: getIpData(clientIp), dns: dns.getServers()};
+    const output = { data: getIpData(clientIp), dns: dns.getServers() };
     twing.render('index.html', output).then((output) => {
         res.end(output);
     });
@@ -64,13 +81,17 @@ app.get('/json/live/ip/:ip', function (req, res) {
 
 app.get('/json/ip/:ip', function (req, res) {
     res.type('application/json');
-    res.send(getIpData(req.params.ip));
+    getIpData(req.params.ip).then((result) => {
+        res.send(result);
+    }); 
 });
 
 app.get('/json/ip', function (req, res) {
     var clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
     res.type('application/json');
-    res.send(getIpData(clientIp));
+    getIpData(clientIp).then((result) => {
+        res.send(result);
+    });    
 });
 
 app.listen(port, () => {
